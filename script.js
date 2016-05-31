@@ -1,5 +1,9 @@
+'use strict';
 var correct = false;
 var currentState = "10";
+var tablicaZdan;
+var input = "";
+var currentStates = [];
 var out = "";
 var tab = [
     ["11", "-", "-", "-", "-", "-", "-", "-", "-", "-"], //q0
@@ -16,20 +20,22 @@ var tab = [
     ["11", "11", "11", "11", "11", "11", "11", "11", "11", "11"] //q11 - akteptacyjny
 ];
 
+var span = document.createElement('span');
+
+
 function handleFileSelect(evt) {
     var files = evt.target.files;
     for (var i = 0, f; f = files[i]; i++) {
         var reader = new FileReader();
-        reader.onload = (function(theFile) {
-            return function(e) {
-                result = e.target.result;
-                var span = document.createElement('span');
-                span.innerHTML += '<p>' + 'input file: ' + result + '</p>';
+        reader.onload = ((theFile) => {
+            return (e) => {
+                var result = e.target.result;
+                span.innerHTML += '<p>' + 'Snput file: ' + result + '</p>';
 
                 result = result.split('#');
-                span.innerHTML += '<p>' + 'splited: ' + result + '</p>';
+                span.innerHTML += '<p>' + 'Splited: ' + result + '</p>';
 
-                result.forEach(check);
+                check(result);
 
                 span.innerHTML += '<p>' + out + '</p>';
 
@@ -40,46 +46,47 @@ function handleFileSelect(evt) {
     }
 }
 
+
 function check(series) {
-    series = series.trim();
-    for (var j = 0; j < series.length; j++) {
-        var needRepeat = goToState(series[j]);
-        if (needRepeat) {
-            j--;
+    for (var s = 0; s < series.length; s++) { // sprawdzenie serii
+        if (!isNaN(parseInt(series[s]))) {
+            out += '<p>' + 'Checked: ' + series[s];
+            console.log('Read series: ' + series[s]);
+
+            var znalezionoPowtorzenie = false;
+            currentStates = [];
+            currentStates.push(10);
+
+            for (var c in series[s].trim()) { // sprawdzenie znaku
+                console.log('Read number: ' + series[s][c]);
+                var tmpcurrentStates = currentStates;
+                currentStates = [];
+                for (var l in tmpcurrentStates) { // sprawdzenie stanow
+                    console.log("Current state: " + tmpcurrentStates);
+                    console.log(parseInt(tmpcurrentStates[l]) + ' ' + series[s][c]);
+
+                    if (tab[parseInt(tmpcurrentStates[l])][series[s][c]] != "-") {
+                        var b = tab[parseInt(tmpcurrentStates[l])][series[s][c]].split(',').map(Number);
+                        console.log("TEST " + b);
+                        for (var m in b) {
+                            currentStates.push(b[m]);
+                        }
+                    }
+                    if (tmpcurrentStates[l] == 11) {
+                        znalezionoPowtorzenie = true;
+                    }
+                    currentStates.push(10);
+                }
+            }
+
+            if (znalezionoPowtorzenie) {
+                out += ' with repetition' + '</p>';
+            } else {
+                out += ' without repetition' + '</p>';
+
+            }
         }
     }
-
-    if (correct) {
-        out += '<p>' + " Repeat in: " + series + '</p>';
-        correct = false;
-    } else {
-        out += '<p>' + " Without repetition in: " + series + '</p>';
-    }
-    currentState = "10";
-    out = '<p>' + out + '</p>';
 }
-
-function goToState(series) {
-    out += "<li>Current state: " + currentState + ", series: " + series + "-> ";
-    switch (currentState) {
-        case "10":
-            currentState = tab[10][series].split(',')[1];
-            break;
-        case "11":
-            //currentState = tab[11][series];
-            correct = true;
-            break;
-        default:
-            if (currentState == series) {
-                currentState = tab[series][series];
-            } else {
-                currentState = tab[10][series].split(',')[0];
-                out += ", new state: " + currentState + "</li>";
-                return true;
-            }
-    }
-    out += ", new state: " + currentState + "</li>";
-    return false;
-}
-
+span.innerHTML += '<p>' + out + '</p>';
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
